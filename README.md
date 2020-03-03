@@ -2,12 +2,14 @@
 
 ## USAGE
 
-**usage:** usage: scanner.py [-h] [--file [PDF_FILE]] [--dir [DIR]] 
+**usage:** ```
+scanner.py [-h] [--file [PDF_FILE]] [--dir [DIR]] 
                   [--templates_file [TEMPLATES_FILE]]
                   [--templates_dir [TEMPLATES_DIR]] [--train] 
-                  [--not_save]
+                  [--not_save]```
 
 **optional arguments:**
+
   -h, --help - show this help message and exit
   
   --file [PDF_FILE] - scan pdf file
