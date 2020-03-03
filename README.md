@@ -8,19 +8,19 @@
                   [--not_save]
 
 **optional arguments:**
-  -h, --help            show this help message and exit
+  -h, --help - show this help message and exit
   
-  --file [PDF_FILE]     scan pdf file
+  --file [PDF_FILE] - scan pdf file
   
-  --dir [DIR]           scan directory with pdf files
+  --dir [DIR] - scan directory with pdf files
   
-  --templates_file [TEMPLATES_FILE] file with templates. 'base.yml' - default
+  --templates_file [TEMPLATES_FILE] - file with templates. 'base.yml' - default
   
-  --templates_dir [TEMPLATES_DIR]   directory with templates
+  --templates_dir [TEMPLATES_DIR] - directory with templates
   
-  --train               train mode
+  --train - train mode
   
-  --not_save            save not training
+  --not_save - save not training
 
 ## EXAMPLES
 
