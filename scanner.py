@@ -10,6 +10,7 @@ import time
 import re
 import yaml
 import os
+from scipy import ndimage
 
 
 def createParser():
@@ -25,25 +26,63 @@ def createParser():
 
 
 def gray_convert(img):
-    image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#    image = cv2.medianBlur(image, 5)
-#    image = cv2.erode(image, np.ones((3, 3), np.uint8), iterations=1)
-    return image
+    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+
+def blur(img):
+    return cv2.medianBlur(img, 5)
+
+
+def erode(img):
+    return cv2.erode(img, np.ones((3, 3), np.uint8), iterations=1)
+
+
+def turn(img, angle):
+    return ndimage.rotate(img, angle)
+
+
+def bil_filter(img):
+    return cv2.bilateralFilter(img, -1, 13, 13)
 
 
 def text_to_words(txt):
     text = re.sub('[\n\t\r,<>;:+?"/\\^%#@№~`*&!=|_©\[\]\{\}\(\)]', ' ', txt)
     words = re.split(r'\s+', text.lower())
-#    print(words)
-    return words
+    return set(words)
 
 
-def img_to_text(img):
+def img_to_text(img, cfg):
     return pytesseract.image_to_string(
                     img,
                     lang='rus',
-#                    config='--psm 6 --oem 1'
+                    config=cfg
     )
+
+def img_to_letters(img):
+    letters = []
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    grad = cv2.morphologyEx(img, cv2.MORPH_GRADIENT, kernel)
+    _, bw = cv2.threshold(grad, 0.0, 255.0, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 1))
+    connected = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
+    contours, hierarchy = cv2.findContours(connected.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    mask = np.zeros(bw.shape, dtype=np.uint8)
+    for idx in range(len(contours)):
+        x, y, w, h = cv2.boundingRect(contours[idx])
+        mask[y:y+h, x:x+w] = 0
+        cv2.drawContours(mask, contours, idx, (255, 255, 255), -1)
+        r = float(cv2.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
+        if r > 0.4 and w > 8 and h > 8:
+            if w > 500 and h > 500:
+                def_img = img[y:y+h-1, x:x+w-1]
+                letters += img_to_letters(def_img)
+                letters.append(def_img)
+            elif w > h*2:
+                def_img = img[y:y+h-1, x:x+w-1]
+            elif h > w*2:
+                def_img = turn(img[y:y+h-1, x:x+w-1], -90)
+                letters.append(def_img)
+    return letters
 
 
 class Definer():
@@ -113,23 +152,24 @@ class Definer():
             i += 1
             print("Page ", i)
             image = np.array(page)
-#            cv2.imwrite('test'+str(i)+'_1.png', image)
-            res = self.define_page(image, filename.split('/')[-1])
+            image = gray_convert(image)
+            image = bil_filter(image)
+            res, words = self.define_page(image, filename.split('/')[-1])
             if not (res is None):
                 print(res)
             else:
-                image = gray_convert(image)
-#                cv2.imwrite('test'+str(i)+'_2.png', image)
-                res = self.define_page(image, filename.split('/')[-1])
-                print(res)
+                for letter in img_to_letters(image):
+                    words.update(text_to_words(img_to_text(letter, '--psm 6 --oem 1')))
+                print(words)
+                print(self.doc_def(words, filename.split('/')[-1]))
 
     def define_page(self, img, filename):
         time_start = time.time()
-        text = img_to_text(img)
+        text = img_to_text(img, '')
         time_stop = time.time()
 #          print(time_stop - time_start)
         words = text_to_words(text)
-        return self.doc_def(words, filename)
+        return self.doc_def(words, filename), words
 
 
 def main(namespace):
