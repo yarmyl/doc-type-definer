@@ -16,18 +16,18 @@ from scipy import ndimage
 def createParser():
     parser = argparse.ArgumentParser()
 #    parser.add_argument('--start', action='store_true')
-    parser.add_argument('--image', nargs='?')
+    parser.add_argument('--file', nargs='?')
+    parser.add_argument('--dir', nargs='?')
     parser.add_argument('--templates_file', nargs='?')
     parser.add_argument('--templates_dir', nargs='?')
     parser.add_argument('--train', action='store_true')
-    parser.add_argument('--dir', nargs='?')
     parser.add_argument('--not_save', action='store_true')
     return parser
 
 
 def gray_convert(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
+
 
 def blur(img):
     return cv2.medianBlur(img, 5)
@@ -46,7 +46,7 @@ def bil_filter(img):
 
 
 def text_to_words(txt):
-    text = re.sub('[\n\t\r,<>;:+?"/\\^%#@№~`*&!=|_©\[\]\{\}\(\)]', ' ', txt)
+    text = re.sub(r'[\n\t\r,<>;:+?"/\\^%#@№~`*&!=|_©\[\]\{\}\(\)]', ' ', txt)
     words = re.split(r'\s+', text.lower())
     return set(words)
 
@@ -58,14 +58,24 @@ def img_to_text(img, cfg):
                     config=cfg
     )
 
+
 def img_to_letters(img):
     letters = []
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     grad = cv2.morphologyEx(img, cv2.MORPH_GRADIENT, kernel)
-    _, bw = cv2.threshold(grad, 0.0, 255.0, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    _, bw = cv2.threshold(
+                    grad,
+                    0.0,
+                    255.0,
+                    cv2.THRESH_BINARY | cv2.THRESH_OTSU
+    )
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 1))
     connected = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
-    contours, hierarchy = cv2.findContours(connected.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(
+                    connected.copy(),
+                    cv2.RETR_EXTERNAL,
+                    cv2.CHAIN_APPROX_NONE
+    )
     mask = np.zeros(bw.shape, dtype=np.uint8)
     for idx in range(len(contours)):
         x, y, w, h = cv2.boundingRect(contours[idx])
@@ -159,7 +169,14 @@ class Definer():
                 print(res)
             else:
                 for letter in img_to_letters(image):
-                    words.update(text_to_words(img_to_text(letter, '--psm 6 --oem 1')))
+                    words.update(
+                        text_to_words(
+                            img_to_text(
+                                    letter,
+                                    '--psm 6 --oem 1'
+                            )
+                        )
+                    )
                 print(words)
                 print(self.doc_def(words, filename.split('/')[-1]))
 
@@ -192,8 +209,8 @@ def main(namespace):
         )
     else:
         definer = Definer('base.yml', train, not_save)
-    if namespace.image:
-        definer.define_image(namespace.image)
+    if namespace.file:
+        definer.define_image(namespace.file)
     elif namespace.dir:
         for filename in os.listdir(path=namespace.dir):
             print("File", filename)
