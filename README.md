@@ -9,23 +9,32 @@
 
 **optional arguments:**
   -h, --help            show this help message and exit
+  
   --file [PDF_FILE]     scan pdf file
+  
   --dir [DIR]           scan directory with pdf files
+  
   --templates_file [TEMPLATES_FILE] file with templates. 'base.yml' - default
+  
   --templates_dir [TEMPLATES_DIR]   directory with templates
+  
   --train               train mode
+  
   --not_save            save not training
 
 ## EXAMPLES
 
 ```./scanner.py --image tests/Паспорт\ РФ_2.pdf --train --not_save ```
+
 ```./scanner.py --dir tests/ --train ```
+
 ```./scanner.py --dir tests/ --train --templates_dir templates/ ```
 
 
 ## TEMPLATE FILE EXAMPLE
 
 **from base.yml**:
+```
 Акт услуг:
   koef: 0.7
   акт: 1
@@ -49,6 +58,7 @@
   koef: 1
   итого: 1
   счет: 1
+```
   
 ## TEMPLATES DIR
   
