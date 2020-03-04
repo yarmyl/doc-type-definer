@@ -11,11 +11,13 @@ import re
 import yaml
 import os
 from scipy import ndimage
+import socket
+
 
 
 def createParser():
     parser = argparse.ArgumentParser()
-#    parser.add_argument('--start', action='store_true')
+    parser.add_argument('--server', action='store_true')
     parser.add_argument('--file', nargs='?')
     parser.add_argument('--dir', nargs='?')
     parser.add_argument('--templates_file', nargs='?')
@@ -147,17 +149,26 @@ class Definer():
                 with open(self.path+'/'+name+'.yml', 'w') as f:
                     yaml.dump(self.knowlage[name], f, allow_unicode=True)
 
-    def define_image(self, filename):
+    def define_image(self, filename, bytes=None):
         time_start = time.time()
-        pages = pdf2image.convert_from_path(
+        if bytes is None:
+            pages = pdf2image.convert_from_path(
                             filename,
                             thread_count=2,
                             fmt="png",
                             dpi=300
-        )
+            )
+        else:
+            pages = pdf2image.convert_from_bytes(
+                            bytes,
+                            thread_count=2,
+                            fmt="png",
+                            dpi=300
+            )
         time_stop = time.time()
 #       print(time_stop - time_start)
         i = 0
+        result = []
         for page in pages:
             i += 1
             print("Page ", i)
@@ -166,7 +177,7 @@ class Definer():
             image = bil_filter(image)
             res, words = self.define_page(image, filename.split('/')[-1])
             if not (res is None):
-                print(res)
+                 result += [res]
             else:
                 for letter in img_to_letters(image):
                     words.update(
@@ -177,8 +188,13 @@ class Definer():
                             )
                         )
                     )
-                print(words)
-                print(self.doc_def(words, filename.split('/')[-1]))
+#                print(words)
+                res = self.doc_def(words, filename.split('/')[-1])
+                if (res is None):
+                    result += ["None"]
+                else:
+                    result += [res]
+        return result
 
     def define_page(self, img, filename):
         time_start = time.time()
@@ -215,6 +231,31 @@ def main(namespace):
         for filename in os.listdir(path=namespace.dir):
             print("File", filename)
             definer.define_image(namespace.dir + '/' + filename)
+    elif namespace.server:
+        try:
+            sock = socket.socket()
+            sock.bind(('',  8090))
+            sock.listen()
+            while True:
+                conn, _ = sock.accept()
+                try:
+                    file_byte = b''
+                    data = conn.recv(1024)
+                    while data[-5:] != b'DONE!':
+                        file_byte += data
+                        data = conn.recv(1024)
+                    file_byte += data[:-5]
+                    message = definer.define_image('from_server', file_byte)
+                    conn.send('\n'.join(message).encode())
+                except:
+                    print("Some socket Error!")
+                    conn.send("Some connect Error!".encode())
+                finally:
+#                    f = open('test_1.pdf', 'wb')
+#                    f.write(file_byte)
+#                    f.close
+                    conn.close()
+        finally: sock.close()
 
 
 if __name__ == '__main__':

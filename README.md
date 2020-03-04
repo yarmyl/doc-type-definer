@@ -26,6 +26,8 @@ scanner.py [-h] [--file [PDF_FILE]] [--dir [DIR]]
   
   --not_save - save not training
 
+  --server - start server mode
+
 ## EXAMPLES
 
 ```./scanner.py --image tests/Паспорт\ РФ_2.pdf --train --not_save ```
@@ -34,6 +36,7 @@ scanner.py [-h] [--file [PDF_FILE]] [--dir [DIR]]
 
 ```./scanner.py --dir tests/ --train --templates_dir templates/ ```
 
+```./scanner.py --server```
 
 ## TEMPLATE FILE EXAMPLE
 
