@@ -94,4 +94,4 @@ from Счет.yml:
 
 ## DOCKER
 
-```docker run -p 8090:8090 --rm -ti pdf-scanner```
+```docker run -p 8090:8090 --rm -d pdf-scanner```
