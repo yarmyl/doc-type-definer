@@ -91,3 +91,7 @@ from Счет.yml:
   итого: 1
   счет: 1
 ```
+
+## DOCKER
+
+```docker run -p 8090:8090 --rm -ti pdf-scanner```
