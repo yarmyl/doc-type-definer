@@ -94,4 +94,6 @@ from Счет.yml:
 
 ## DOCKER
 
+```docker build -t <image_name> .```
+
 ```docker run -p 8090:8090 --rm -d pdf-scanner```
